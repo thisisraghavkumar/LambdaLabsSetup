@@ -1,0 +1,8 @@
+# System packages beyond Lambda Stack, needed for mujoco rendering and the
+# video evaluation/export path this project uses (utilities/evaluate_*.py
+# --video-out ...). Cheap to reinstall each session, so not persisted.
+libgl1
+libosmesa6
+libglfw3
+patchelf
+ffmpeg
