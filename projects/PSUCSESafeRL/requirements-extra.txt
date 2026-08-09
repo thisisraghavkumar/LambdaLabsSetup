@@ -45,7 +45,7 @@ markdown-it-py==4.0.0
 markupsafe==3.0.3
 matplotlib==3.10.8
 mdurl==0.1.2
-moviepy==2.2.1
+moviepy<2.2  # 2.2.1 pins numpy>=1.25, which conflicts with gymnasium-robotics's numpy<1.24 — let pip pick a compatible version
 mujoco==2.3.3
 omnisafe==0.5.0
 opencv-python==4.8.0.74

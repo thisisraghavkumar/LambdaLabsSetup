@@ -45,6 +45,15 @@ to persist it.
    instances will clone it fresh each session.
 3. If your filesystem name isn't `ml-persist`, either rename it to match, or export
    `LAMBDA_FS_NAME=<your-name>` before sourcing `bootstrap.sh` each session.
+4. **Generate a dedicated GitHub deploy key** (don't reuse `id_ed25519` — that one's
+   registered with Lambda for logging into instances, keep it separate from GitHub
+   auth):
+   ```bash
+   ssh-keygen -t ed25519 -f github_deploy_key -C "lambda-instance-github-deploy" -N ""
+   ```
+   Add the contents of `github_deploy_key.pub` to GitHub → Settings → SSH and GPG
+   keys. Keep both files out of git (they're not inside this repo, so nothing to
+   gitignore, but don't move them in either).
 
 ## Per-session workflow
 
@@ -65,6 +74,16 @@ to persist it.
    `requirements-extra.txt` (plus `setup-extra.sh` if present) — takes a minute or two.
    Every run after that: just activates the existing venv — a few seconds, no
    reinstalling.
+
+   This step also wires up GitHub SSH auth from `/lambda/nfs/<fs-name>/ssh/github_deploy_key`
+   if it's there, so `git clone`/`pull` over SSH just works without re-authenticating.
+   **First session only**, that key won't exist yet — `bootstrap.sh` will print a
+   reminder to `scp` it up once:
+   ```bash
+   scp -i id_ed25519 github_deploy_key ubuntu@<instance-ip>:/lambda/nfs/ml-persist/ssh/github_deploy_key
+   ```
+   Then re-run `source bootstrap.sh <project>`. Every session after that, the key is
+   already on the filesystem and this is automatic.
 4. Clone/pull your actual project code separately (this repo only holds the
    Lambda-specific setup files, not the RL/ML project code itself), e.g.:
    ```bash

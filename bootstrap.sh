@@ -42,13 +42,44 @@ _bootstrap() {
     local hf_cache="$fs_root/hf-cache"
     local checkpoint_dir="$fs_root/projects/$project/checkpoints"
     local dataset_dir="$fs_root/projects/$project/datasets"
+    local ssh_dir="$fs_root/ssh"
+    local gh_key="$ssh_dir/github_deploy_key"
 
     mkdir -p "$hf_cache" "$checkpoint_dir" "$dataset_dir"
 
+    if [[ -f "$gh_key" ]]; then
+        chmod 600 "$gh_key"
+        mkdir -p "$HOME/.ssh"
+        chmod 700 "$HOME/.ssh"
+        if ! grep -q "^Host github.com$" "$HOME/.ssh/config" 2>/dev/null; then
+            {
+                echo ""
+                echo "Host github.com"
+                echo "    IdentityFile $gh_key"
+                echo "    IdentitiesOnly yes"
+            } >> "$HOME/.ssh/config"
+            chmod 600 "$HOME/.ssh/config"
+        fi
+        if ! ssh-keygen -F github.com >/dev/null 2>&1; then
+            ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
+        fi
+        echo "GitHub SSH key wired up from $gh_key"
+    else
+        echo "NOTE: no GitHub deploy key found at $gh_key"
+        echo "  One-time step: from your Mac, scp your private key up, e.g.:"
+        echo "    scp -i id_ed25519 <path-to-private-key> ubuntu@<instance-ip>:$gh_key"
+        echo "  Then re-run: source bootstrap.sh $project"
+    fi
+
     if [[ -f "$apt_file" ]]; then
+        local apt_updated=0
         while IFS= read -r pkg; do
             [[ -z "$pkg" || "$pkg" == \#* ]] && continue
             if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+                if [[ "$apt_updated" -eq 0 ]]; then
+                    sudo apt-get update -qq
+                    apt_updated=1
+                fi
                 echo "Installing system package: $pkg"
                 sudo apt-get install -y "$pkg"
             fi
