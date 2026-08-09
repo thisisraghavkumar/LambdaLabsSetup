@@ -2,7 +2,18 @@
 # video evaluation/export path this project uses (utilities/evaluate_*.py
 # --video-out ...). Cheap to reinstall each session, so not persisted.
 libgl1
-libosmesa6
+libosmesa6   # CPU-only MUJOCO_GL=osmesa fallback; works everywhere, no driver match needed
 libglfw3
 patchelf
 ffmpeg
+
+# GPU-accelerated headless rendering (MUJOCO_GL=egl). Lambda Stack's driver
+# here is a *headless* NVIDIA server build (nvidia-headless-580-server-open),
+# which deliberately excludes GL/EGL userspace libs. libnvidia-gl-580-server
+# supplies those, but MUST be pinned to match the installed driver exactly -
+# Ubuntu's default candidate (580.173.02) is a different upstream build that
+# can mismatch the running kernel module. Check the installed version with
+# `dpkg -s libnvidia-cfg1-580-server` if this ever needs updating for a new
+# Lambda Stack image.
+libegl1
+libnvidia-gl-580-server=580.105.08-0lambda0.22.04.1

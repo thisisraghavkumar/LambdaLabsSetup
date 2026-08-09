@@ -74,8 +74,13 @@ _bootstrap() {
     if [[ -f "$apt_file" ]]; then
         local apt_updated=0
         while IFS= read -r pkg; do
-            [[ -z "$pkg" || "$pkg" == \#* ]] && continue
-            if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+            pkg="${pkg%%#*}"
+            pkg="$(echo "$pkg" | xargs)"  # trim whitespace
+            [[ -z "$pkg" ]] && continue
+            # supports "package" or pinned "package=version"; dpkg -s only
+            # understands the bare name, so check on that but install with
+            # whatever was written (pin included) if given.
+            if ! dpkg -s "${pkg%%=*}" >/dev/null 2>&1; then
                 if [[ "$apt_updated" -eq 0 ]]; then
                     sudo apt-get update -qq
                     apt_updated=1
