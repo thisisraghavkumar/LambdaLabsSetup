@@ -4,6 +4,45 @@ A workflow for resuming RL/ML work on Lambda Labs GPU instances in minutes inste
 redoing setup every session, while paying for persistent storage of only what's
 actually expensive to lose or regenerate.
 
+## Introduction and quickstart
+
+Picture the scenario this repo exists for: you've got an RL or ML project you chip
+away at for a couple of hours on a Saturday, on a GPU that costs real money by the
+hour. You spin up a Lambda Labs instance, and by the time you've reinstalled MuJoCo,
+re-downloaded your model weights, and re-authenticated with GitHub, half your session
+is already gone. Then you delete the instance to stop the bill, and next weekend you
+do the whole thing over again. This repo exists to make every session after the first
+one start in seconds instead of minutes, by keeping the expensive stuff — your custom
+Python packages, downloaded models, training checkpoints, and GitHub credentials — on
+a small, cheap slice of persistent storage that survives even when the GPU instance
+itself doesn't.
+
+Here's the fast path, assuming you've already got a Lambda Cloud account:
+
+1. **Clone this repo** somewhere you'll remember it, and generate a GitHub deploy key
+   it can use to check out your actual project code without you re-authenticating
+   every week (the exact command is in "One-time setup" below).
+2. **Create a persistent filesystem** in the Lambda console — a one-time, few-click
+   job — in a region that has the GPU types you'll actually use.
+3. **Launch an instance**, and remember to attach that filesystem at launch time —
+   Lambda won't let you bolt it on afterwards, so it's worth double-checking before
+   you hit go.
+4. **SSH in, clone this repo onto the instance, and run one command**:
+   `source bootstrap.sh <your-project>`. The first time, it builds a lean Python
+   environment for your project; every time after that, it just switches it back on —
+   a few seconds, not a few minutes.
+5. **Do your work.** Checkpoints, datasets, and downloaded models all land on the
+   persistent filesystem automatically, so nothing you generate disappears along with
+   the instance.
+6. **Terminate the instance** from the console when you're done for the day.
+   Everything that matters is already stored safely — you're only paying a few cents
+   a month to keep it there until you come back.
+
+That's really the whole idea. The rest of this README fills in the details — why it's
+built this way, what to expect the first time versus every time after, and how to
+wire up a new project — but with the six steps above, you're most of the way there
+already.
+
 ## Why it's built this way
 
 Lambda Stack images already ship PyTorch, CUDA, numpy, and friends. Lambda's
